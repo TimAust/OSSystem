@@ -43,4 +43,20 @@
     <updateservers>
         <server type="extension" priority="1" name="OSSystem"><![CDATA[https://deploy.ostraining.com/client/update/free/stable/plg_system_ossystem]]></server>
     </updateservers>
+
+    <config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field
+                    name="allow_tracking"
+                    type="list"
+                    default="0"
+                    label="PLG_SYSTEM_OSSYSTEM_ALLOW_TRACKING_LABEL"
+                    description="PLG_SYSTEM_OSSYSTEM_ALLOW_TRACKING_DESC">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+            </fieldset>
+        </fields>
+    </config>
 </extension>

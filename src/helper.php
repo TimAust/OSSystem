@@ -96,4 +96,88 @@ abstract class OSSystemHelper
             }
         }
     }
+
+    /**
+     * Get the extension's custom data
+     *
+     * @param  int      $extensionId The extension id
+     * @return stdClass              The custom data as object
+     */
+    public static function getCustomData($extensionId)
+    {
+        $db = JFactory::getDBO();
+
+        $query = $db->getQuery(true)
+            ->select('custom_data')
+            ->from('#__extensions')
+            ->where('extension_id = ' . $db->quote($extensionId));
+        $db->setQuery($query);
+
+        $customData = $db->loadResult();
+
+        if (!empty($customData)) {
+            $customData = json_decode($customData);
+        }
+
+        if (empty($customData)) {
+            $customData = new stdClass;
+        }
+
+        return $customData;
+    }
+
+    /**
+     * Check if the interval between the last track action and the current time
+     * is bigger than the expected interval. The data is stored in the extensions
+     * custom data field.
+     *
+     * @param  int  $extensionId  The extension id
+     * @return bool              True, if the interval is bigger than expected
+     */
+    public static function checkLastTrackInterval($extensionId)
+    {
+        $customData = self::getCustomData($extensionId);
+
+        if (!isset($customData->lastTrackTime)) {
+            return true;
+        } else {
+            $interval = microtime(true) - $customData->lastTrackTime;
+
+            // Interval of 1 day, in seconds
+            if ($interval >= 86400) {
+                return true;
+            }
+        }
+
+        // debug
+        return true;
+
+        return false;
+    }
+
+    /**
+     * Update the last track time, storing it on the extension's custom
+     * data field.
+     *
+     * @param  int  $extensionId The extension id
+     * @return bool              True, if updated successfully
+     */
+    public static function updateLastTrackTime($extensionId)
+    {
+        $db = JFactory::getDBO();
+
+        $customData = self::getCustomData($extensionId);
+
+        $customData->lastTrackTime = microtime(true);
+
+        $customDataStr = json_encode($customData);
+
+        $query = $db->getQuery(true)
+            ->update('#__extensions')
+            ->set('custom_data = ' . $db->quote($customDataStr))
+            ->where('extension_id = ' . $db->quote($extensionId));
+        $db->setQuery($query);
+
+        return $db->execute();
+    }
 }

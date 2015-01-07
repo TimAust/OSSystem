@@ -7,6 +7,8 @@
  */
 
 use Alledia\Framework\Joomla\Extension\AbstractPlugin;
+use Alledia\Framework\Factory;
+use Alledia\OSSystem\Joomla\Tracker;
 
 defined('_JEXEC') or die();
 
@@ -32,6 +34,8 @@ if (defined('ALLEDIA_FRAMEWORK_LOADED')) {
             $this->namespace = 'OSSystem';
 
             parent::__construct($subject, $config);
+
+            $this->init();
         }
 
         /**
@@ -59,6 +63,41 @@ if (defined('ALLEDIA_FRAMEWORK_LOADED')) {
             }
 
             OSSystemHelper::checkAndUpdateCARootFile();
+        }
+
+        /**
+         * This method detects
+         * @return [type] [description]
+         */
+        public function onBeforeRender()
+        {
+            $config = JFactory::getConfig();
+
+            // Do not execute if debug is on - to avoid memory issues
+            if ($config->get('debug')) {
+                return;
+            }
+
+            $this->loadExtension();
+            $extensionId = $this->extension->getId();
+
+            // Check if we need to track again, or wait the interval
+            if (OSSystemHelper::checkLastTrackInterval($extensionId)) {
+                $tracker = Tracker::getInstance();
+
+                // Check if we have permission to track anonymous data
+                if ((bool) $this->params->get('allow_tracking')) {
+                    // Check if
+                    if ($tracker->track()) {
+                        OSSystemHelper::updateLastTrackTime($extensionId);
+                    }
+                } else {
+                    // Try to say to the server that the tracker is disabled
+                    if ($tracker->disable()) {
+                        OSSystemHelper::updateLastTrackTime($extensionId);
+                    }
+                }
+            }
         }
     }
 }
